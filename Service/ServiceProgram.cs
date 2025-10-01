@@ -25,6 +25,25 @@ namespace Service
             {
                 host.AddServiceEndpoint(typeof(IChargingService), binding, "ChargingService");
 
+                ChargingService.OnTransferStarted += (vehicleId) =>
+                {
+                    Console.WriteLine($"[EVENT] Prenos započet za vozilo {vehicleId}");
+                };
+
+                ChargingService.OnSampleReceived += (vehicleId, sample) =>
+                {
+                    Console.WriteLine($"[EVENT] Sample stigao za {vehicleId}, Row {sample.RowIndex}");
+                };
+
+                ChargingService.OnTransferCompleted += (vehicleId) =>
+                {
+                    Console.WriteLine($"[EVENT] Prenos završen za vozilo {vehicleId}");
+                };
+
+                ChargingService.OnWarningRaised += (vehicleId, warning) =>
+                {
+                    Console.WriteLine($"[WARNING] {warning} (vozilo {vehicleId})");
+                };
 
                 try
                 {
