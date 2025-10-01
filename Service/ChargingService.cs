@@ -152,6 +152,8 @@ namespace Service
 
                 Console.WriteLine($"[SERVER] Sample odbijen (Row {sample.RowIndex}) → {ex.Message}");
                 OnWarningRaised?.Invoke(_currentVehicleId, $"Sample odbijen: {ex.Message}");
+
+                throw new FaultException("Sample odbijen: " + ex.Message);
             }
         }
 
