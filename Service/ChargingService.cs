@@ -59,7 +59,7 @@ namespace Service
             _rejectWriter = new StreamWriter(new FileStream(rejectPath, FileMode.Append, FileAccess.Write));
 
             if (new FileInfo(rejectPath).Length == 0)
-                _rejectWriter.WriteLine("RowIndex,Reason,RawData");
+                _rejectWriter.WriteLine("RowIndex,Timestamp,VoltageAvg,CurrentAvg,RealPowerAvg,FrequencyAvg");
 
             _isTransferring = true;
 
@@ -146,15 +146,19 @@ namespace Service
             }
             catch (Exception ex)
             {
-                string rejectLine = $"{sample.RowIndex},\"{ex.Message}\",{SerializeSample(sample)}";
+                string rejectLine = $"{sample.RowIndex},{sample.Timestamp:O}," +
+                                    $"{sample.VoltageRmsAvg},{sample.CurrentRmsAvg}," +
+                                    $"{sample.RealPowerAvg},{sample.FrequencyAvg}";
+
                 _rejectWriter.WriteLine(rejectLine);
                 _rejectWriter.Flush();
 
                 Console.WriteLine($"[SERVER] Sample odbijen (Row {sample.RowIndex}) → {ex.Message}");
                 OnWarningRaised?.Invoke(_currentVehicleId, $"Sample odbijen: {ex.Message}");
 
-                throw new FaultException("Sample odbijen: " + ex.Message);
+                //throw new FaultException("Sample odbijen: " + ex.Message);
             }
+
         }
 
         public void EndSession(string vehicleId)
@@ -179,12 +183,27 @@ namespace Service
 
         private void ValidateSample(ChargingSample sample)
         {
+            // Timestamp mora biti validan i ne u budućnosti
             if (sample.Timestamp == default || sample.Timestamp > DateTime.Now)
                 throw new FaultException("Nevalidan Timestamp!");
 
-            if (sample.VoltageRmsAvg <= 0 || sample.CurrentRmsAvg < 0 || sample.FrequencyAvg <= 0)
-                throw new FaultException("Nevalidne vrednosti signala!");
+            // Svi signali moraju biti striktno > 0
+            if (sample.VoltageRmsAvg <= 0)
+                throw new FaultException("Nevalidan napon (VoltageRmsAvg <= 0)");
+
+            if (sample.CurrentRmsAvg <= 0)
+                throw new FaultException("Nevalidna struja (CurrentRmsAvg <= 0)");
+
+            if (sample.RealPowerAvg <= 0)
+                throw new FaultException("Nevalidna snaga (RealPowerAvg <= 0)");
+
+            if (sample.FrequencyAvg <= 0)
+                throw new FaultException("Nevalidna frekvencija (FrequencyAvg <= 0)");
+
+            if (sample.FrequencyMin <= 0 || sample.FrequencyMax <= 0)
+                throw new FaultException("Nevalidne vrednosti frekvencijskog opsega!");
         }
+
 
         private string SerializeSample(ChargingSample s)
         {

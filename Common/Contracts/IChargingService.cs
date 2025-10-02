@@ -12,12 +12,15 @@ namespace Common.Contracts
     public interface IChargingService
     {
         [OperationContract]
+        [FaultContract(typeof(FaultException))]
         void StartSession(string vehicleId);
 
         [OperationContract]
+        [FaultContract(typeof(FaultException))]
         void PushSample(ChargingSample sample);
 
         [OperationContract]
+        [FaultContract(typeof(FaultException))]
         void EndSession(string vehicleId);
     }
 }
